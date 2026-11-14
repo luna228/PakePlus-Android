@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>中国象棋 · 完整版</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: #2e4a3a; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            overflow: hidden; touch-action: manipulation;
+        }
+        .start-screen {
+            position: fixed; inset: 0;
+            background: radial-gradient(circle at 50% 30%, #4a6b4a, #1e2f1e);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 1000; transition: opacity 0.5s ease, transform 0.5s ease; padding: 20px;
+            overflow-y: auto;
+        }
+        .start-screen.hidden { opacity: 0; transform: scale(1.05); pointer-events: none; }
+        .start-title {
+            font-size: clamp(2.2rem, 7vw, 3.6rem); font-weight: 900; color: #f2e6d0;
+            text-shadow: 0 4px 0 #7a5e3e, 0 8px 20px rgba(0,0,0,0.6);
+            letter-spacing: 8px; margin-bottom: 6px; font-family: 'KaiTi', '楷体', serif;
+            animation: titleFloat 3s ease-in-out infinite;
+        }
+        @keyframes titleFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        .start-subtitle {
+            font-size: clamp(0.85rem, 2.5vw, 1.1rem); color: #c9a87c;
+            letter-spacing: 4px; margin-bottom: 16px; text-shadow: 0 2px 4px black;
+        }
+        .start-panel {
+            background: #d9b382; padding: clamp(14px,3.5vw,24px) clamp(18px,4.5vw,38px);
+            border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,200,0.3);
+            border: 5px solid #b58b5c; display: flex; flex-direction: column; gap: 12px;
+            width: min(480px, 94vw); margin-bottom: 20px;
+        }
+        .start-section-label {
+            font-size: 0.88rem; font-weight: bold; color: #5a3e1b;
+            letter-spacing: 2px; margin-bottom: -4px;
+        }
+        .mode-options { display: flex; gap: 8px; flex-wrap: wrap; }
+        .mode-option {
+            flex: 1 1 calc(33% - 8px); min-width: 90px;
+            background: #f2e6d0; border: 3px solid transparent; border-radius: 16px;
+            padding: 12px 6px; cursor: pointer; text-align: center;
+            transition: all 0.2s ease; box-shadow: 0 5px 0 #8f734c;
+        }
+        .mode-option:active { transform: translateY(3px); box-shadow: 0 2px 0 #8f734c; }
+        .mode-option.active {
+            border-color: #b33e2c; background: #fdf3e0;
+            box-shadow: 0 5px 0 #8f734c, 0 0 0 3px #b33e2c;
+        }
+        .mode-icon { font-size: 1.4rem; margin-bottom: 2px; }
+        .mode-name { font-size: 0.85rem; font-weight: bold; color: #3a2a12; }
+        .mode-desc { font-size: 0.65rem; color: #7a5e3e; margin-top: 1px; }
+
+        .difficulty-options { display: flex; gap: 5px; flex-wrap: wrap; }
+        .diff-option {
+            flex: 1 1 calc(20% - 5px); min-width: 52px; background: #f2e6d0;
+            border: 2px solid transparent; border-radius: 12px; padding: 8px 2px;
+            cursor: pointer; text-align: center; transition: all 0.2s ease;
+            font-weight: bold; font-size: 0.76rem; color: #3a2a12;
+            box-shadow: 0 4px 0 #8f734c;
+        }
+        .diff-option:active { transform: translateY(3px); box-shadow: 0 1px 0 #8f734c; }
+        .diff-option.active {
+            border-color: #b33e2c; background: #fdf3e0;
+            box-shadow: 0 4px 0 #8f734c, 0 0 0 2px #b33e2c;
+        }
+        .diff-option.hell {
+            background: #2a0a0a; color: #ff6b6b; border-color: #ff3333;
+            text-shadow: 0 0 6px #ff3333;
+        }
+        .diff-option.hell.active {
+            background: #4a0a0a; box-shadow: 0 4px 0 #6b1e14, 0 0 0 2px #ff3333, 0 0 15px #ff3333;
+        }
+
+        .learning-panel {
+            background: #e8f4e8; border-radius: 14px; padding: 10px 14px;
+            border: 1px solid #5a7d5a; display: flex; flex-direction: column; gap: 6px;
+        }
+        .learning-panel .learning-stats {
+            display: flex; gap: 8px; flex-wrap: wrap;
+            font-size: 0.75rem; color: #3a5a3a; font-weight: bold;
+        }
+        .learning-panel .learning-stats span {
+            background: #d4e8d4; padding: 3px 8px; border-radius: 10px;
+        }
+        .learning-actions { display: flex; gap: 6px; }
+        .learning-btn {
+            flex: 1; background: #d4e8d4; border: none; padding: 6px;
+            border-radius: 10px; font-size: 0.72rem; font-weight: bold;
+            color: #2b3e2b; cursor: pointer; box-shadow: 0 3px 0 #5a7d5a;
+            transition: all 0.07s ease; font-family: inherit;
+        }
+        .learning-btn:active { transform: translateY(3px); box-shadow: 0 0 0 #5a7d5a; }
+
+        .start-btn {
+            background: linear-gradient(180deg, #d94a3a, #a82e20);
+            color: #fff8e0; border: none; padding: 13px; border-radius: 40px;
+            font-size: 1.25rem; font-weight: 900; letter-spacing: 5px;
+            cursor: pointer; box-shadow: 0 8px 0 #6b1e14, 0 12px 20px rgba(0,0,0,0.4);
+            transition: all 0.1s ease; margin-top: 4px; font-family: inherit;
+        }
+        .start-btn:hover { filter: brightness(1.1); }
+        .start-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #6b1e14, 0 6px 12px rgba(0,0,0,0.4); }
+
+        .game-container {
+            background: #d9b382; padding: 1.4rem 1.6rem; border-radius: 32px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,200,0.3);
+            border: 6px solid #b58b5c; opacity: 0; transform: scale(0.95);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            pointer-events: none; max-width: 96vw;
+        }
+        .game-container.active { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .board-wrapper { display: flex; flex-direction: column; align-items: center; }
+        canvas {
+            display: block; background: #f2e6d0; border-radius: 16px;
+            box-shadow: inset 0 0 0 4px #c9a87c, 0 10px 20px rgba(0,0,0,0.4);
+            cursor: pointer; width: min(520px, 88vw); height: auto;
+            aspect-ratio: 520 / 580; will-change: transform;
+        }
+        .status-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; width: 100%; color: #1e2b20; font-weight: bold;
+            font-size: 0.95rem; text-shadow: 0 1px 2px #f0e0b0; gap: 8px; flex-wrap: wrap;
+        }
+        .turn-indicator {
+            background: #f2e6d0; padding: 6px 16px; border-radius: 40px;
+            box-shadow: inset 0 1px 5px #9b7b54, 0 4px 0 #7a5e3e;
+            border: 2px solid #b58b5c; color: #3a2a12; font-size: 0.95rem;
+            min-width: 150px; text-align: center; transition: color 0.15s;
+        }
+        .turn-indicator.check { color: #b33e2c; font-weight: 900; }
+        .turn-indicator.thinking { color: #7a5e3e; font-style: italic; animation: pulse 1s infinite; }
+        .turn-indicator.draw { color: #5a5a5a; font-weight: 900; }
+        .turn-indicator.autolearn-mode {
+            color: #3a5a7d; border-color: #3a5a7d; background: #e8f0f8;
+        }
+        .turn-indicator.hell-mode {
+            color: #ff3333; text-shadow: 0 0 8px #ff3333; border-color: #ff3333;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        button.ctrl-btn {
+            background: #ebd6b0; border: none; padding: 6px 12px; border-radius: 30px;
+            font-weight: bold; font-size: 0.85rem; color: #2b1f0e;
+            box-shadow: 0 4px 0 #8f734c, 0 4px 8px black; cursor: pointer;
+            transition: all 0.07s ease; border: 1px solid #ffeac2;
+            font-family: inherit; touch-action: manipulation;
+        }
+        button.ctrl-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #8f734c, 0 4px 8px black; }
+        button.ctrl-btn:disabled {
+            opacity: 0.5; transform: translateY(3px);
+            box-shadow: 0 1px 0 #8f734c; pointer-events: none;
+        }
+        .mode-panel { display: flex; gap: 6px; margin-bottom: 6px; align-self: flex-start; flex-wrap: wrap; }
+        .badge {
+            background: #a57d51; color: #fef7e9; padding: 3px 10px;
+            border-radius: 20px; font-size: 0.75rem; letter-spacing: 1px;
+        }
+        .badge.hell-badge { background: #6b1e14; color: #ff9999; text-shadow: 0 0 6px #ff3333; }
+        .badge.learning-badge { background: #3a5a7d; color: #d4e8f4; }
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #3a2a12ee; color: #fef7e9; padding: 10px 24px; border-radius: 40px;
+            font-weight: bold; font-size: 1rem; box-shadow: 0 6px 18px #000000aa;
+            border: 2px solid #ebd6b0; pointer-events: none; opacity: 0;
+            transition: opacity 0.2s; z-index: 999; white-space: nowrap;
+        }
+        .toast.show { opacity: 1; }
+
+        .autolearn-info {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #2e4a3aee; color: #f2e6d0; padding: 6px 18px;
+            border-radius: 20px; font-size: 0.78rem; border: 1px solid #3a5a7d;
+            z-index: 500; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            white-space: nowrap; max-width: 96vw; overflow: hidden; text-overflow: ellipsis;
+        }
+        .autolearn-info.show { opacity: 1; }
+
+        @media (max-width: 480px) {
+            .game-container { padding: 1rem; border-radius: 24px; border-width: 4px; }
+            .status-bar { font-size: 0.82rem; }
+            .turn-indicator { font-size: 0.82rem; padding: 5px 12px; min-width: 120px; }
+            button.ctrl-btn { font-size: 0.78rem; padding: 5px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="start-screen" id="startScreen">
+    <div class="start-title">中国象棋</div>
+    <div class="start-subtitle">楚 河 汉 界 · 智 慧 对 决</div>
+    <div class="start-panel">
+        <div class="start-section-label">选择模式</div>
+        <div class="mode-options">
+            <div class="mode-option active" data-mode="ai">
+                <div class="mode-icon">🤖</div>
+                <div class="mode-name">单人模式</div>
+                <div class="mode-desc">与 AI 对战</div>
+            </div>
+            <div class="mode-option" data-mode="human">
+                <div class="mode-icon">👥</div>
+                <div class="mode-name">双人对战</div>
+                <div class="mode-desc">同屏对弈</div>
+            </div>
+            <div class="mode-option" data-mode="autolearn">
+                <div class="mode-icon">🧠</div>
+                <div class="mode-name">自主学习</div>
+                <div class="mode-desc">AI 自我进化</div>
+            </div>
+        </div>
+
+        <div class="start-section-label" id="difficultyLabel">选择难度</div>
+        <div class="difficulty-options" id="difficultyOptions">
+            <div class="diff-option" data-diff="easy">简单</div>
+            <div class="diff-option active" data-diff="medium">中等</div>
+            <div class="diff-option" data-diff="hard">困难</div>
+            <div class="diff-option" data-diff="master">大师</div>
+            <div class="diff-option hell" data-diff="hell">地狱</div>
+        </div>
+
+        <div class="learning-panel" id="learningPanel">
+            <div class="learning-stats" id="learningStats">
+                <span>📚 0 局面</span>
+                <span>🎮 0 局</span>
+                <span>✅ 0 胜</span>
+                <span>❌ 0 负</span>
+                <span>🤝 0 和</span>
+            </div>
+            <div class="learning-actions">
+                <button class="learning-btn" id="exportLearningBtn">导出数据</button>
+                <button class="learning-btn" id="importLearningBtn">导入数据</button>
+                <button class="learning-btn" id="clearLearningBtn">清除学习</button>
+            </div>
+        </div>
+
+        <button class="start-btn" id="startBtn">开 始 游 戏</button>
+    </div>
+</div>
+
+<div class="game-container" id="gameContainer">
+    <div class="board-wrapper">
+        <div class="mode-panel">
+            <span class="badge">中国象棋</span>
+            <span class="badge" id="modeBadge" style="background:#5a7d5a;">单人模式</span>
+            <span class="badge hell-badge" id="hellBadge" style="display:none;">🔥 地狱难度</span>
+            <span class="badge learning-badge" id="learningBadge" style="display:none;">🧠 自主学习</span>
+        </div>
+        <canvas id="boardCanvas" width="520" height="580"></canvas>
+        <div class="status-bar">
+            <div class="turn-indicator" id="turnIndicator">红方走棋</div>
+            <div class="controls">
+                <button class="ctrl-btn" id="undoBtn" disabled>悔棋</button>
+                <button class="ctrl-btn" id="backBtn">返回菜单</button>
+                <button class="ctrl-btn" id="resetBtn">重新开始</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="autolearn-info" id="autolearnInfo"></div>
+
+<script>
+    (function() {
+        'use strict';
+
+        // ============================================================
+        // 常量
+        // ============================================================
+        const BOARD_WIDTH = 520;
+        const BOARD_HEIGHT = 580;
+        const MARGIN_X = 40;
+        const MARGIN_Y = 40;
+        const CELL_SIZE = (BOARD_WIDTH - 2 * MARGIN_X) / 8;
+        const PIECE_RADIUS = 24;
+        const MATE_SCORE = 100000;
+        const DOUBLE_CANNON_MATE_SCORE = MATE_SCORE - 500;
+        const STORAGE_KEY = 'chess_autolearn_v4';
+
+        // ============================================================
+        // 全局状态
+        // ============================================================
+        const gameState = {
+            board: null,
+            currentPlayer: 'red',
+            mode: 'ai',
+            difficulty: 'medium',
+            selectedPiece: null,
+            legalTargets: [],
+            gameOver: false,
+            winner: null,
+            drawReason: null,
+            lastMove: null,
+            moveHistory: [],
+            positionHistory: [],
+            positionCounts: {},
+            noCaptureCount: 0,
+            running: false,
+            aiBusy: false,
+            animState: null,
+            autolearnMoveCount: 0,
+            autolearnStartTime: 0,
+            epoch: 0  // Bug1：棋局代数，防止旧 finishMove 误作用于新棋局
+        };
+
+        let aiTimer = null;
+        let animationRafId = null;
+        let needAnimationLoop = false;
+        let animCounter = 0;  // Bug1：动画唯一 ID
+
+        function clearAllTimers() {
+            if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+            stopAnimationLoop();
+        }
+
+        // ============================================================
+        // 学习库使用概率 (根据难度决定)
+        // ============================================================
+        function getLearningProbability() {
+            if (gameState.mode === 'autolearn') return 0.5;
+            if (gameState.mode !== 'ai') return 0;
+            switch (gameState.difficulty) {
+                case 'easy': return 0.0;
+                case 'medium': return 0.1;
+                case 'hard': return 0.3;
+                case 'master': return 0.5;
+                case 'hell': return 0.7;
+                default: return 0.1;
+            }
+        }
+
+        // ============================================================
+        // 学习数据
+        // ============================================================
+        let learningData = {
+            moveBook: {},
+            weightVersion: 1,
+            weights: { cannonValue: 380, kingSafety: 1.0, synergy: 1.0, threat: 1.0, mobility: 1.0, pieceSafety: 1.0, centerControl: 1.0 },
+            gamesPlayed: 0, wins: 0, losses: 0, draws: 0,
+            openingBook: {}
+        };
+
+        function loadLearningData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (data && typeof data === 'object') {
+                        learningData = Object.assign(learningData, data);
+                        if (!learningData.moveBook || typeof learningData.moveBook !== 'object') learningData.moveBook = {};
+                        if (!learningData.openingBook || typeof learningData.openingBook !== 'object') learningData.openingBook = {};
+                        if (learningData.draws === undefined) learningData.draws = 0;
+                        if (!learningData.weights) learningData.weights = { cannonValue: 380, kingSafety: 1.0, synergy: 1.0, threat: 1.0, mobility: 1.0, pieceSafety: 1.0, centerControl: 1.0 };
+                    }
+                }
+            } catch (e) { console.warn('加载学习数据失败', e); }
+        }
+
+        function saveLearningData() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(learningData)); }
+            catch (e) { console.warn('保存学习数据失败', e); }
+        }
+
+        function updateLearningDisplay() {
+            const stats = document.getElementById('learningStats');
+            if (!stats) return;
+            const positions = Object.keys(learningData.moveBook).length;
+            const total = learningData.gamesPlayed;
+            const winRate = total > 0 ? Math.round((learningData.wins / total) * 100) : 0;
+            stats.innerHTML = `
+                <span>📚 ${positions} 局面</span>
+                <span>🎮 ${total} 局</span>
+                <span>✅ ${learningData.wins} 胜</span>
+                <span>❌ ${learningData.losses} 负</span>
+                <span>🤝 ${learningData.draws} 和</span>
+                <span>📊 ${winRate}%</span>
+                <span>⚖️ v${learningData.weightVersion}</span>
+            `;
+        }
+
+        function recordGameResult(result, reason) {
+            learningData.gamesPlayed++;
+            if (result === 'red') learningData.wins++;
+            else if (result === 'black') learningData.losses++;
+            else if (result === 'draw') learningData.draws++;
+            if (result !== 'draw') {
+                adjustWeights(result);
+                evolveOpeningBook(result);
+            }
+            learningData.weightVersion++;
+            saveLearningData();
+            updateLearningDisplay();
+        }
+
+        function adjustWeights(winnerColor) {
+            const w = learningData.weights;
+            if (winnerColor === 'red') {
+                w.kingSafety = Math.min(2.5, w.kingSafety + 0.04);
+                w.pieceSafety = Math.min(2.5, w.pieceSafety + 0.04);
+                w.threat = Math.min(2.5, w.threat + 0.03);
+                w.mobility = Math.min(2.0, w.mobility + 0.02);
+            } else if (winnerColor === 'black') {
+                w.synergy = Math.min(2.0, w.synergy + 0.04);
+                w.threat = Math.min(2.5, w.threat + 0.03);
+                w.cannonValue = Math.min(450, w.cannonValue + 2);
+                w.centerControl = Math.min(2.0, w.centerControl + 0.02);
+            }
+        }
+
+        function evolveOpeningBook(winnerColor) {
+            if (gameState.moveHistory.length < 4) return;
+            const key = gameState.moveHistory.slice(0, 4).map(m =>
+                `${m.piece[0]}${m.fromRow}${m.fromCol}${m.toRow}${m.toCol}`
+            ).join('|');
+            if (!learningData.openingBook[key]) learningData.openingBook[key] = { wins: 0, losses: 0 };
+            if (winnerColor === 'black') learningData.openingBook[key].wins++;
+            else learningData.openingBook[key].losses++;
+        }
+
+        function lookupLearnedMove(hash) {
+            const entry = learningData.moveBook[hash.toString()];
+            if (!entry) return null;
+            const total = entry.wins + entry.losses;
+            if (total < 2 || entry.wins / total < 0.5) return null;
+            return entry.move;
+        }
+
+        function recordMoveOutcome(hash, move, win) {
+            const key = hash.toString();
+            if (!learningData.moveBook[key]) {
+                learningData.moveBook[key] = {
+                    move: { fromRow: move.fromRow, fromCol: move.fromCol, toRow: move.toRow, toCol: move.toCol },
+                    wins: 0, losses: 0
+                };
+            }
+            if (win) learningData.moveBook[key].wins++;
+            else learningData.moveBook[key].losses++;
+        }
+
+        // ============================================================
+        // DOM 元素
+        // ============================================================
+        const canvas = document.getElementById('boardCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const startScreen = document.getElementById('startScreen');
+        const gameContainer = document.getElementById('gameContainer');
+        const turnIndicator = document.getElementById('turnIndicator');
+        const modeBadge = document.getElementById('modeBadge');
+        const hellBadge = document.getElementById('hellBadge');
+        const learningBadge = document.getElementById('learningBadge');
+        const toastEl = document.getElementById('toast');
+        const autolearnInfo = document.getElementById('autolearnInfo');
+        const undoBtn = document.getElementById('undoBtn');
+        const backBtn = document.getElementById('backBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // ============================================================
+        // 音效
+        // ============================================================
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+            }
+        }
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+                if (type === 'move') { osc.frequency.value = 440; osc.type = 'sine'; gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08); osc.start(now); osc.stop(now + 0.08); }
+                else if (type === 'capture') { osc.frequency.value = 330; osc.type = 'square'; gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); osc.start(now); osc.stop(now + 0.15); }
+                else if (type === 'check') { osc.frequency.value = 660; osc.type = 'sawtooth'; gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); osc.start(now); osc.stop(now + 0.2); }
+                else if (type === 'win') { osc.frequency.value = 523; osc.type = 'sine'; gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); osc.start(now); osc.stop(now + 0.4); }
+                else if (type === 'draw') { osc.frequency.value = 392; osc.type = 'triangle'; gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
+            } catch (e) {}
+        }
+
+        // ============================================================
+        // 工具
+        // ============================================================
+        function createInitialBoard() {
+            const b = Array(10).fill().map(() => Array(9).fill(null));
+            b[0][0] = 'r'; b[0][1] = 'n'; b[0][2] = 'b'; b[0][3] = 'a'; b[0][4] = 'k';
+            b[0][5] = 'a'; b[0][6] = 'b'; b[0][7] = 'n'; b[0][8] = 'r';
+            b[2][1] = 'c'; b[2][7] = 'c';
+            b[3][0] = 'p'; b[3][2] = 'p'; b[3][4] = 'p'; b[3][6] = 'p'; b[3][8] = 'p';
+            b[9][0] = 'R'; b[9][1] = 'N'; b[9][2] = 'B'; b[9][3] = 'A'; b[9][4] = 'K';
+            b[9][5] = 'A'; b[9][6] = 'B'; b[9][7] = 'N'; b[9][8] = 'R';
+            b[7][1] = 'C'; b[7][7] = 'C';
+            b[6][0] = 'P'; b[6][2] = 'P'; b[6][4] = 'P'; b[6][6] = 'P'; b[6][8] = 'P';
+            return b;
+        }
+
+        function getPieceColor(piece) {
+            if (!piece) return null;
+            return piece === piece.toUpperCase() ? 'red' : 'black';
+        }
+
+        let toastTimeout = null;
+        function toast(msg, duration = 1000) {
+            toastEl.textContent = msg;
+            toastEl.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toastEl.classList.remove('show'), duration);
+        }
+
+        // ============================================================
+        // 走棋规则 (含飞将)
+        // ============================================================
+        function isValidMove(b, fromRow, fromCol, toRow, toCol, playerColor) {
+            if (fromRow === toRow && fromCol === toCol) return false;
+            const piece = b[fromRow][fromCol];
+            if (!piece) return false;
+            if (getPieceColor(piece) !== playerColor) return false;
+            const targetPiece = b[toRow][toCol];
+            if (targetPiece && getPieceColor(targetPiece) === playerColor) return false;
+            const type = piece.toUpperCase();
+            const rowDiff = toRow - fromRow;
+            const colDiff = toCol - fromCol;
+            if (toRow < 0 || toRow > 9 || toCol < 0 || toCol > 8) return false;
+            const inPalace = (row, col, color) => {
+                if (color === 'red') return row >= 7 && row <= 9 && col >= 3 && col <= 5;
+                return row >= 0 && row <= 2 && col >= 3 && col <= 5;
+            };
+            switch (type) {
+                case 'K': {
+                    if (!inPalace(toRow, toCol, playerColor)) return false;
+                    if (Math.abs(rowDiff) + Math.abs(colDiff) !== 1) return false;
+                    const oppColor = playerColor === 'red' ? 'black' : 'red';
+                    const oppKingPos = findKing(b, oppColor);
+                    if (oppKingPos) {
+                        const saved = b[toRow][toCol];
+                        b[toRow][toCol] = piece;
+                        b[fromRow][fromCol] = null;
+                        let faceToFace = false;
+                        if (toCol === oppKingPos.col) {
+                            let between = 0;
+                            const minR = Math.min(toRow, oppKingPos.row);
+                            const maxR = Math.max(toRow, oppKingPos.row);
+                            for (let r = minR + 1; r < maxR; r++) if (b[r][toCol]) between++;
+                            if (between === 0) faceToFace = true;
+                        }
+                        if (toRow === oppKingPos.row) {
+                            let between = 0;
+                            const minC = Math.min(toCol, oppKingPos.col);
+                            const maxC = Math.max(toCol, oppKingPos.col);
+                            for (let c = minC + 1; c < maxC; c++) if (b[toRow][c]) between++;
+                            if (between === 0) faceToFace = true;
+                        }
+                        b[toRow][toCol] = saved;
+                        b[fromRow][fromCol] = piece;
+                        if (faceToFace) return false;
+                    }
+                    return true;
+                }
+                case 'A':
+                    if (!inPalace(toRow, toCol, playerColor)) return false;
+                    return Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 1;
+                case 'B': {
+                    if (playerColor === 'red' && toRow < 5) return false;
+                    if (playerColor === 'black' && toRow > 4) return false;
+                    if (Math.abs(rowDiff) !== 2 || Math.abs(colDiff) !== 2) return false;
+                    return !b[(fromRow + toRow) / 2][(fromCol + toCol) / 2];
+                }
+                case 'N':
+                    if (!((Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2))) return false;
+                    if (Math.abs(rowDiff) === 2) return !b[fromRow + Math.sign(rowDiff)][fromCol];
+                    return !b[fromRow][fromCol + Math.sign(colDiff)];
+                case 'R':
+                    if (fromRow !== toRow && fromCol !== toCol) return false;
+                    if (fromRow === toRow) {
+                        for (let c = Math.min(fromCol, toCol) + 1; c < Math.max(fromCol, toCol); c++) if (b[fromRow][c]) return false;
+                    } else {
+                        for (let r = Math.min(fromRow, toRow) + 1; r < Math.max(fromRow, toRow); r++) if (b[r][fromCol]) return false;
+                    }
+                    return true;
+                case 'C':
+                    if (fromRow !== toRow && fromCol !== toCol) return false;
+                    if (fromRow === toRow) {
+                        let count = 0;
+                        for (let c = Math.min(fromCol, toCol) + 1; c < Math.max(fromCol, toCol); c++) if (b[fromRow][c]) count++;
+                        return targetPiece ? count === 1 : count === 0;
+                    } else {
+                        let count = 0;
+                        for (let r = Math.min(fromRow, toRow) + 1; r < Math.max(fromRow, toRow); r++) if (b[r][fromCol]) count++;
+                        return targetPiece ? count === 1 : count === 0;
+                    }
+                case 'P': {
+                    if (playerColor === 'red' && toRow > fromRow) return false;
+                    if (playerColor === 'black' && toRow < fromRow) return false;
+                    const crossedRiver = playerColor === 'red' ? fromRow <= 4 : fromRow >= 5;
+                    if (!crossedRiver) return colDiff === 0 && Math.abs(rowDiff) === 1;
+                    return Math.abs(rowDiff) + Math.abs(colDiff) === 1;
+                }
+                default: return false;
+            }
+        }
+
+        function findKing(b, color) {
+            const kingChar = color === 'red' ? 'K' : 'k';
+            for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++)
+                if (b[r][c] === kingChar) return { row: r, col: c };
+            return null;
+        }
+
+        function isKingInCheck(b, color) {
+            const king = findKing(b, color);
+            if (!king) return true;
+            const opp = color === 'red' ? 'black' : 'red';
+            for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++) {
+                const p = b[r][c];
+                if (p && getPieceColor(p) === opp && isValidMove(b, r, c, king.row, king.col, opp)) return true;
+            }
+            const oppKing = findKing(b, opp);
+            if (oppKing) {
+                if (king.col === oppKing.col) {
+                    let piecesBetween = 0;
+                    const minRow = Math.min(king.row, oppKing.row);
+                    const maxRow = Math.max(king.row, oppKing.row);
+                    for (let r = minRow + 1; r < maxRow; r++) if (b[r][king.col]) piecesBetween++;
+                    if (piecesBetween === 0) return true;
+                }
+                if (king.row === oppKing.row) {
+                    let piecesBetween = 0;
+                    const minCol = Math.min(king.col, oppKing.col);
+                    const maxCol = Math.max(king.col, oppKing.col);
+                    for (let c = minCol + 1; c < maxCol; c++) if (b[king.row][c]) piecesBetween++;
+                    if (piecesBetween === 0) return true;
+                }
+            }
+            return false;
+        }
+
+        function getAllLegalMoves(b, color) {
+            const moves = [];
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const piece = b[r][c];
+                    if (!piece || getPieceColor(piece) !== color) continue;
+                    for (let tr = 0; tr < 10; tr++) {
+                        for (let tc = 0; tc < 9; tc++) {
+                            if (!isValidMove(b, r, c, tr, tc, color)) continue;
+                            const saved = b[tr][tc];
+                            b[tr][tc] = piece; b[r][c] = null;
+                            const check = isKingInCheck(b, color);
+                            b[r][c] = piece; b[tr][tc] = saved;
+                            if (!check) moves.push({ fromRow: r, fromCol: c, toRow: tr, toCol: tc });
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function isCheckmate(b, color) {
+            const king = findKing(b, color);
+            if (!king) return true;
+            if (!isKingInCheck(b, color)) return false;
+            return getAllLegalMoves(b, color).length === 0;
+        }
+
+        // ============================================================
+        // 和棋判断（严格士象全）
+        // ============================================================
+        function countAttackingPiecesDetail(b, color) {
+            let rook = 0, knight = 0, cannon = 0, pawn = 0;
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const p = b[r][c];
+                    if (!p || getPieceColor(p) !== color) continue;
+                    const t = p.toUpperCase();
+                    if (t === 'R') rook++;
+                    else if (t === 'N') knight++;
+                    else if (t === 'C') cannon++;
+                    else if (t === 'P') {
+                        if ((color === 'red' && r <= 4) || (color === 'black' && r >= 5)) pawn++;
+                    }
+                }
+            }
+            return { rook, knight, cannon, pawn, total: rook + knight + cannon + pawn };
+        }
+
+        function isDraw(b, currentColor) {
+            const redDetail = countAttackingPiecesDetail(b, 'red');
+            const blackDetail = countAttackingPiecesDetail(b, 'black');
+
+            if (redDetail.total === 0 && blackDetail.total === 0) {
+                return { isDraw: true, reason: '双方无进攻子力' };
+            }
+
+            // 严格"士象全"（2士 + 2象）才判单子难胜
+            if (redDetail.total <= 1 && redDetail.rook === 0 && blackDetail.total === 0) {
+                const blackA = countPieces(b, 'black', 'A');
+                const blackB = countPieces(b, 'black', 'B');
+                if (blackA >= 2 && blackB >= 2) return { isDraw: true, reason: '单子（非车）难胜士象全' };
+            }
+            if (blackDetail.total <= 1 && blackDetail.rook === 0 && redDetail.total === 0) {
+                const redA = countPieces(b, 'red', 'A');
+                const redB = countPieces(b, 'red', 'B');
+                if (redA >= 2 && redB >= 2) return { isDraw: true, reason: '单子（非车）难胜士象全' };
+            }
+
+            if (gameState.noCaptureCount >= 60) return { isDraw: true, reason: '60回合无吃子' };
+            const currentHash = computeZobrist(b, currentColor);
+            if (gameState.positionCounts[currentHash] >= 3) return { isDraw: true, reason: '三次重复局面' };
+            return { isDraw: false, reason: null };
+        }
+
+        // ============================================================
+        // 双炮将死检测
+        // ============================================================
+        function isDoubleCannonMateThreat(b, kingColor) {
+            const king = findKing(b, kingColor);
+            if (!king) return false;
+            const opp = kingColor === 'red' ? 'black' : 'red';
+            const cannonChar = opp === 'red' ? 'C' : 'c';
+            const cannons = [];
+            for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++)
+                if (b[r][c] === cannonChar) cannons.push({ row: r, col: c });
+            if (cannons.length < 2) return false;
+            for (let i = 0; i < cannons.length; i++) {
+                for (let j = i + 1; j < cannons.length; j++) {
+                    const c1 = cannons[i], c2 = cannons[j];
+                    if (c1.row === c2.row && c1.row === king.row) {
+                        const minC = Math.min(c1.col, c2.col, king.col);
+                        const maxC = Math.max(c1.col, c2.col, king.col);
+                        let pieces = 0;
+                        for (let c = minC + 1; c < maxC; c++) if (b[king.row][c]) pieces++;
+                        if (pieces === 1) {
+                            const cm = Math.min(c1.col, c2.col), cM = Math.max(c1.col, c2.col);
+                            for (let c = cm + 1; c < cM; c++) if (b[king.row][c]) return true;
+                            if (king.col > cm && king.col < cM) {
+                                let l = 0, r2 = 0;
+                                for (let c = cm + 1; c < king.col; c++) if (b[king.row][c]) l++;
+                                for (let c = king.col + 1; c < cM; c++) if (b[king.row][c]) r2++;
+                                if (l === 1 || r2 === 1) return true;
+                            }
+                        }
+                    }
+                    if (c1.col === c2.col && c1.col === king.col) {
+                        const minR = Math.min(c1.row, c2.row, king.row);
+                        const maxR = Math.max(c1.row, c2.row, king.row);
+                        let pieces = 0;
+                        for (let r = minR + 1; r < maxR; r++) if (b[r][king.col]) pieces++;
+                        if (pieces === 1) {
+                            const rm = Math.min(c1.row, c2.row), rM = Math.max(c1.row, c2.row);
+                            for (let r = rm + 1; r < rM; r++) if (b[r][king.col]) return true;
+                            if (king.row > rm && king.row < rM) {
+                                let u = 0, d = 0;
+                                for (let r = rm + 1; r < king.row; r++) if (b[r][king.col]) u++;
+                                for (let r = king.row + 1; r < rM; r++) if (b[r][king.col]) d++;
+                                if (u === 1 || d === 1) return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function canOpponentFormDoubleCannonInOne(b, kingColor) {
+            const opp = kingColor === 'red' ? 'black' : 'red';
+            const moves = getAllLegalMoves(b, opp);
+            for (const move of moves) {
+                const piece = b[move.fromRow][move.fromCol];
+                if (!piece || piece.toUpperCase() !== 'C') continue;
+                const target = b[move.toRow][move.toCol];
+                b[move.toRow][move.toCol] = piece; b[move.fromRow][move.fromCol] = null;
+                const threatened = isDoubleCannonMateThreat(b, kingColor);
+                b[move.fromRow][move.fromCol] = piece; b[move.toRow][move.toCol] = target;
+                if (threatened) return true;
+            }
+            return false;
+        }
+
+        // ============================================================
+        // 评估函数
+        // ============================================================
+        function getPieceValues() {
+            return { 'K': 10000, 'R': 650, 'N': 320, 'C': learningData.weights.cannonValue || 380, 'A': 120, 'B': 120, 'P': 80 };
+        }
+
+        const PAWN_POS = [[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[10,10,10,10,10,10,10,10,10],[20,25,30,35,40,35,30,25,20],[30,35,45,50,55,50,45,35,30],[40,45,55,60,65,60,55,45,40],[50,55,65,75,80,75,65,55,50]];
+        const KNIGHT_POS = [[0,2,4,4,4,4,4,2,0],[2,4,6,8,8,8,6,4,2],[4,6,10,12,12,12,10,6,4],[4,8,12,14,14,14,12,8,4],[4,8,12,14,14,14,12,8,4],[4,8,12,14,14,14,12,8,4],[4,6,10,12,12,12,10,6,4],[2,4,6,8,8,8,6,4,2],[0,2,4,4,4,4,4,2,0],[0,2,4,4,4,4,4,2,0]];
+        const ROOK_POS = [[6,8,10,12,14,12,10,8,6],[8,10,12,14,16,14,12,10,8],[6,8,10,12,14,12,10,8,6],[6,8,10,12,14,12,10,8,6],[6,8,10,12,14,12,10,8,6],[6,8,10,12,14,12,10,8,6],[6,8,10,12,14,12,10,8,6],[8,10,12,14,16,14,12,10,8],[6,8,10,12,14,12,10,8,6],[4,6,8,10,12,10,8,6,4]];
+        const CANNON_POS = [[2,4,6,8,10,8,6,4,2],[4,6,8,10,12,10,8,6,4],[4,6,8,10,12,10,8,6,4],[4,6,8,10,12,10,8,6,4],[4,6,8,10,12,10,8,6,4],[4,6,8,10,12,10,8,6,4],[4,6,8,10,12,10,8,6,4],[6,8,10,12,14,12,10,8,6],[4,6,8,10,12,10,8,6,4],[2,4,6,8,10,8,6,4,2]];
+        const ADVISOR_POS = [[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,5,0,5,0,0,0],[0,0,0,0,10,0,0,0,0],[0,0,0,5,0,5,0,0,0]];
+        const KING_POS = [[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,10,0,0,0,0],[0,0,0,0,0,0,0,0,0]];
+
+        function getPositionValue(piece, row, col) {
+            const type = piece.toUpperCase();
+            const isRed = piece === piece.toUpperCase();
+            const r = isRed ? row : 9 - row;
+            const c = isRed ? col : 8 - col;
+            switch (type) {
+                case 'P': return PAWN_POS[r][c] || 0;
+                case 'N': return KNIGHT_POS[r][c] || 0;
+                case 'R': return ROOK_POS[r][c] || 0;
+                case 'C': return CANNON_POS[r][c] || 0;
+                case 'A': return ADVISOR_POS[r][c] || 0;
+                case 'B': return ADVISOR_POS[r][c] || 0;
+                case 'K': return KING_POS[r][c] || 0;
+                default: return 0;
+            }
+        }
+
+        function evaluateBoard(b) {
+            const values = getPieceValues();
+            const w = learningData.weights;
+            let score = 0;
+            let redMob = 0, blackMob = 0;
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const piece = b[r][c];
+                    if (!piece) continue;
+                    const color = getPieceColor(piece);
+                    const type = piece.toUpperCase();
+                    const sign = color === 'red' ? 1 : -1;
+                    score += sign * ((values[type] || 0) + getPositionValue(piece, r, c));
+                    if (type === 'R' || type === 'N' || type === 'C' || type === 'P') {
+                        let mob = 0;
+                        for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+                            const nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr < 10 && nc >= 0 && nc < 9) {
+                                const t = b[nr][nc];
+                                if (!t || getPieceColor(t) !== color) mob++;
+                            }
+                        }
+                        if (color === 'red') redMob += mob;
+                        else blackMob += mob;
+                    }
+                }
+            }
+            score += (redMob - blackMob) * 2 * (w.mobility || 1);
+
+            if (isKingInCheck(b, 'black')) score += 400;
+            if (isKingInCheck(b, 'red')) score -= 400;
+
+            const redKing = findKing(b, 'red');
+            const blackKing = findKing(b, 'black');
+            if (redKing && isCannonAiming(b, 'black', redKing.row, redKing.col)) score -= 200;
+            if (blackKing && isCannonAiming(b, 'red', blackKing.row, blackKing.col)) score += 200;
+
+            if (redKing && blackKing) {
+                let faceToFace = false;
+                if (redKing.col === blackKing.col) {
+                    let between = 0;
+                    const minR = Math.min(redKing.row, blackKing.row);
+                    const maxR = Math.max(redKing.row, blackKing.row);
+                    for (let r = minR + 1; r < maxR; r++) if (b[r][redKing.col]) between++;
+                    if (between === 0) faceToFace = true;
+                }
+                if (redKing.row === blackKing.row) {
+                    let between = 0;
+                    const minC = Math.min(redKing.col, blackKing.col);
+                    const maxC = Math.max(redKing.col, blackKing.col);
+                    for (let c = minC + 1; c < maxC; c++) if (b[redKing.row][c]) between++;
+                    if (between === 0) faceToFace = true;
+                }
+                if (faceToFace) score -= 10000;
+            }
+
+            if (isDoubleCannonMateThreat(b, 'red')) score -= 8000;
+            if (isDoubleCannonMateThreat(b, 'black')) score += 8000;
+
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const p = b[r][c];
+                    if (!p) continue;
+                    const color = getPieceColor(p);
+                    const type = p.toUpperCase();
+                    if (type === 'K') continue;
+                    const myVal = values[type] || 0;
+                    const opp = color === 'red' ? 'black' : 'red';
+                    let attacked = false;
+                    for (let rr = 0; rr < 10 && !attacked; rr++) for (let cc = 0; cc < 9 && !attacked; cc++) {
+                        const attacker = b[rr][cc];
+                        if (attacker && getPieceColor(attacker) === opp && isValidMove(b, rr, cc, r, c, opp)) attacked = true;
+                    }
+                    if (attacked) score += (color === 'red' ? -1 : 1) * Math.min(myVal * 0.15, 80) * (w.pieceSafety || 1);
+                }
+            }
+
+            let kingSafetyScore = 0;
+            for (const color of ['red', 'black']) {
+                const sign = color === 'red' ? 1 : -1;
+                const king = findKing(b, color);
+                if (!king) continue;
+                const a = countPieces(b, color, 'A');
+                const bi = countPieces(b, color, 'B');
+                kingSafetyScore += sign * (a * 25 + bi * 20);
+                let nearby = 0;
+                for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const nr = king.row + dr, nc = king.col + dc;
+                    if (nr >= 0 && nr < 10 && nc >= 0 && nc < 9) {
+                        const p = b[nr][nc];
+                        if (p && getPieceColor(p) === color) nearby++;
+                    }
+                }
+                kingSafetyScore += sign * nearby * 12;
+            }
+            score += kingSafetyScore * (w.kingSafety || 1);
+
+            let synergyScore = 0;
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const p = b[r][c];
+                    if (!p || p.toUpperCase() !== 'R') continue;
+                    const color = getPieceColor(p);
+                    for (let cc = 0; cc < 9; cc++) {
+                        if (cc === c) continue;
+                        const t = b[r][cc];
+                        if (t && t.toUpperCase() === 'C' && getPieceColor(t) === color) synergyScore += color === 'red' ? 25 : -25;
+                    }
+                    for (let rr = 0; rr < 10; rr++) {
+                        if (rr === r) continue;
+                        const t = b[rr][c];
+                        if (t && t.toUpperCase() === 'C' && getPieceColor(t) === color) synergyScore += color === 'red' ? 25 : -25;
+                    }
+                }
+            }
+            score += synergyScore * (w.synergy || 1);
+
+            if (Math.abs(score) < 5000) {
+                let threatScore = 0;
+                for (const color of ['red', 'black']) {
+                    const sign = color === 'red' ? 1 : -1;
+                    const opp = color === 'red' ? 'black' : 'red';
+                    for (let r = 0; r < 10; r++) {
+                        for (let c = 0; c < 9; c++) {
+                            const p = b[r][c];
+                            if (!p || getPieceColor(p) !== color) continue;
+                            for (let tr = 0; tr < 10; tr++) {
+                                for (let tc = 0; tc < 9; tc++) {
+                                    const t = b[tr][tc];
+                                    if (!t || getPieceColor(t) !== opp) continue;
+                                    if (isValidMove(b, r, c, tr, tc, color)) {
+                                        const v = values[t.toUpperCase()] || 0;
+                                        if (v >= 300) threatScore += sign * 40;
+                                        else if (v >= 100) threatScore += sign * 20;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                score += threatScore * (w.threat || 1);
+            }
+
+            return score;
+        }
+
+        function isCannonAiming(b, color, targetRow, targetCol) {
+            const char = color === 'red' ? 'C' : 'c';
+            for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++) {
+                if (b[r][c] !== char) continue;
+                if (c === targetCol) {
+                    let count = 0;
+                    for (let rr = Math.min(r, targetRow) + 1; rr < Math.max(r, targetRow); rr++) if (b[rr][c]) count++;
+                    if (count === 1) return true;
+                }
+                if (r === targetRow) {
+                    let count = 0;
+                    for (let cc = Math.min(c, targetCol) + 1; cc < Math.max(c, targetCol); cc++) if (b[r][cc]) count++;
+                    if (count === 1) return true;
+                }
+            }
+            return false;
+        }
+
+        function countPieces(b, color, type) {
+            let count = 0;
+            const char = color === 'red' ? type : type.toLowerCase();
+            for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++) if (b[r][c] === char) count++;
+            return count;
+        }
+
+        // ============================================================
+        // Zobrist / 置换表 / 历史启发
+        // ============================================================
+        const ZOBRIST = {};
+        for (const p of ['K','A','B','N','R','C','P','k','a','b','n','r','c','p']) {
+            ZOBRIST[p] = [];
+            for (let r = 0; r < 10; r++) {
+                ZOBRIST[p][r] = [];
+                for (let c = 0; c < 9; c++) ZOBRIST[p][r][c] = (Math.random() * 0xFFFFFFFF) | 0;
+            }
+        }
+        let zobristTurn = (Math.random() * 0xFFFFFFFF) | 0;
+
+        function computeZobrist(b, color) {
+            let h = 0;
+            for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++) {
+                if (b[r][c]) h ^= ZOBRIST[b[r][c]][r][c];
+            }
+            if (color === 'black') h ^= zobristTurn;
+            return h;
+        }
+
+        const TT = new Map();
+        const TT_LIMIT = 200000;
+        function ttLookup(hash, depth, alpha, beta) {
+            const e = TT.get(hash);
+            if (!e || e.depth < depth) return null;
+            if (e.flag === 'exact') return e.score;
+            if (e.flag === 'lower' && e.score >= beta) return e.score;
+            if (e.flag === 'upper' && e.score <= alpha) return e.score;
+            return null;
+        }
+        function ttStore(hash, depth, score, flag) {
+            if (TT.size > TT_LIMIT) {
+                const keys = Array.from(TT.keys()).slice(0, TT_LIMIT / 2);
+                for (const k of keys) TT.delete(k);
+            }
+            TT.set(hash, { depth, score, flag });
+        }
+
+        const historyTable = Array(10).fill().map(() => Array(9).fill().map(() => Array(10).fill().map(() => Array(9).fill(0))));
+        const killerMoves = Array(32).fill().map(() => []);
+        const HISTORY_CAP = 8000;
+
+        function clearHeuristics() {
+            for (let fr = 0; fr < 10; fr++) for (let fc = 0; fc < 9; fc++) for (let tr = 0; tr < 10; tr++) for (let tc = 0; tc < 9; tc++) historyTable[fr][fc][tr][tc] = 0;
+            for (let i = 0; i < killerMoves.length; i++) killerMoves[i] = [];
+        }
+
+        // ============================================================
+        // 搜索
+        // ============================================================
+        let searchDeadline = 0;
+        let searchAborted = false;
+        const MAX_EXTENSION = 30;
+
+        function quiescence(b, alpha, beta, isMax, aiColor, depth) {
+            if (depth <= 0) return evaluateBoard(b);
+            if (searchAborted || performance.now() > searchDeadline) { searchAborted = true; return 0; }
+            if (aiColor === 'black') {
+                if (isDoubleCannonMateThreat(b, 'red')) return DOUBLE_CANNON_MATE_SCORE;
+                if (isDoubleCannonMateThreat(b, 'black')) return -DOUBLE_CANNON_MATE_SCORE;
+            } else {
+                if (isDoubleCannonMateThreat(b, 'black')) return DOUBLE_CANNON_MATE_SCORE;
+                if (isDoubleCannonMateThreat(b, 'red')) return -DOUBLE_CANNON_MATE_SCORE;
+            }
+
+            const color = isMax ? aiColor : (aiColor === 'red' ? 'black' : 'red');
+            const inCheck = isKingInCheck(b, color);
+            if (inCheck) {
+                const moves = getAllLegalMoves(b, color);
+                // 将死：用 MATE_SCORE（与 minimax 一致）
+                if (moves.length === 0) return isMax ? -MATE_SCORE : MATE_SCORE;
+                if (isMax) {
+                    let best = -Infinity;
+                    for (const move of moves) {
+                        const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                        b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                        const s = quiescence(b, alpha, beta, false, aiColor, depth - 1);
+                        b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                        if (searchAborted) return 0;
+                        if (s > best) best = s;
+                        if (s > alpha) alpha = s;
+                        if (alpha >= beta) break;
+                    }
+                    return best;
+                } else {
+                    let best = Infinity;
+                    for (const move of moves) {
+                        const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                        b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                        const s = quiescence(b, alpha, beta, true, aiColor, depth - 1);
+                        b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                        if (searchAborted) return 0;
+                        if (s < best) best = s;
+                        if (s < beta) beta = s;
+                        if (alpha >= beta) break;
+                    }
+                    return best;
+                }
+            }
+
+            const standPat = evaluateBoard(b);
+            if (isMax) {
+                if (standPat >= beta) return beta;
+                if (standPat > alpha) alpha = standPat;
+            } else {
+                if (standPat <= alpha) return alpha;
+                if (standPat < beta) beta = standPat;
+            }
+            let captures = getAllLegalMoves(b, color).filter(m => b[m.toRow][m.toCol] != null);
+            // 轻微问题2：无吃子时返回更新后的 alpha/beta，而非原始 standPat
+            if (captures.length === 0) return isMax ? alpha : beta;
+            const values = getPieceValues();
+            captures.sort((a, b2) => (values[(b[b2.toRow][b2.toCol] || '').toUpperCase()] || 0) - (values[(b[a.toRow][a.toCol] || '').toUpperCase()] || 0));
+            captures = captures.slice(0, 10);
+            if (isMax) {
+                for (const move of captures) {
+                    const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                    b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                    const s = quiescence(b, alpha, beta, false, aiColor, depth - 1);
+                    b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                    if (searchAborted) return 0;
+                    if (s >= beta) return beta;
+                    if (s > alpha) alpha = s;
+                }
+                return alpha;
+            } else {
+                for (const move of captures) {
+                    const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                    b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                    const s = quiescence(b, alpha, beta, true, aiColor, depth - 1);
+                    b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                    if (searchAborted) return 0;
+                    if (s <= alpha) return alpha;
+                    if (s < beta) beta = s;
+                }
+                return beta;
+            }
+        }
+
+        function minimax(b, depth, alpha, beta, isMax, aiColor, hash, ply) {
+            if (searchAborted || performance.now() > searchDeadline) { searchAborted = true; return 0; }
+            const kingRed = findKing(b, 'red'), kingBlack = findKing(b, 'black');
+            if (!kingRed) return aiColor === 'red' ? MATE_SCORE : -MATE_SCORE;
+            if (!kingBlack) return aiColor === 'black' ? MATE_SCORE : -MATE_SCORE;
+            if (aiColor === 'black') {
+                if (isDoubleCannonMateThreat(b, 'red')) return DOUBLE_CANNON_MATE_SCORE;
+                if (isDoubleCannonMateThreat(b, 'black')) return -DOUBLE_CANNON_MATE_SCORE;
+            } else {
+                if (isDoubleCannonMateThreat(b, 'black')) return DOUBLE_CANNON_MATE_SCORE;
+                if (isDoubleCannonMateThreat(b, 'red')) return -DOUBLE_CANNON_MATE_SCORE;
+            }
+            if (depth === 0) return quiescence(b, alpha, beta, isMax, aiColor, 4);
+            const tt = ttLookup(hash, depth, alpha, beta);
+            if (tt !== null) return tt;
+            const color = isMax ? aiColor : (aiColor === 'red' ? 'black' : 'red');
+            const inCheck = isKingInCheck(b, color);
+            if (depth >= 3 && !inCheck && aiColor === 'black') {
+                if (color === 'red' && canOpponentFormDoubleCannonInOne(b, 'black')) return -DOUBLE_CANNON_MATE_SCORE + 300;
+                if (color === 'black' && canOpponentFormDoubleCannonInOne(b, 'red')) return DOUBLE_CANNON_MATE_SCORE - 300;
+            }
+            if (!inCheck && depth >= 3 && !isMax && Math.abs(beta) < MATE_SCORE - 100) {
+                const nullScore = minimax(b, depth - 3, alpha, beta, !isMax, aiColor, hash, ply + 1);
+                if (searchAborted) return 0;
+                if (nullScore >= beta) return beta;
+            }
+            let moves = getAllLegalMoves(b, color);
+            if (moves.length === 0) return isMax ? -MATE_SCORE + (10 - depth) : MATE_SCORE - (10 - depth);
+            const values = getPieceValues();
+            moves.sort((a, b2) => {
+                const pa = b[a.fromRow][a.fromCol], pb = b[b2.fromRow][b2.fromCol];
+                if (pa && pa.toUpperCase() === 'C' && (!pb || pb.toUpperCase() !== 'C')) return -1;
+                if (pb && pb.toUpperCase() === 'C' && (!pa || pa.toUpperCase() !== 'C')) return 1;
+                const ta = b[a.toRow][a.toCol], tb = b[b2.toRow][b2.toCol];
+                const va = ta ? (values[ta.toUpperCase()] || 0) : 0;
+                const vb = tb ? (values[tb.toUpperCase()] || 0) : 0;
+                if (va !== vb) return vb - va;
+                const km = killerMoves[ply];
+                if (km) {
+                    const aK = km.some(k => k.fromRow === a.fromRow && k.fromCol === a.fromCol && k.toRow === a.toRow && k.toCol === a.toCol);
+                    const bK = km.some(k => k.fromRow === b2.fromRow && k.fromCol === b2.fromCol && k.toRow === b2.toRow && k.toCol === b2.toCol);
+                    if (aK && !bK) return -1;
+                    if (bK && !aK) return 1;
+                }
+                const ha = historyTable[a.fromRow][a.fromCol][a.toRow][a.toCol] || 0;
+                const hb = historyTable[b2.fromRow][b2.fromCol][b2.toRow][b2.toCol] || 0;
+                if (ha !== hb) return hb - ha;
+                return Math.random() - 0.5;
+            });
+            let bestScore = isMax ? -Infinity : Infinity;
+            const origAlpha = alpha;
+            let idx = 0;
+            for (const move of moves) {
+                const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                const newHash = hash ^ ZOBRIST[p][move.fromRow][move.fromCol] ^ ZOBRIST[p][move.toRow][move.toCol] ^ (t ? ZOBRIST[t][move.toRow][move.toCol] : 0);
+                const givesCheck = isKingInCheck(b, color === 'red' ? 'black' : 'red');
+                const extension = (givesCheck && ply < MAX_EXTENSION) ? 1 : 0;
+                let score;
+                if (idx === 0) {
+                    score = minimax(b, depth - 1 + extension, alpha, beta, !isMax, aiColor, newHash, ply + 1);
+                } else if (isMax) {
+                    score = minimax(b, depth - 1 + extension, alpha, alpha + 1, !isMax, aiColor, newHash, ply + 1);
+                    if (score > alpha && score < beta && !searchAborted) score = minimax(b, depth - 1 + extension, alpha, beta, !isMax, aiColor, newHash, ply + 1);
+                } else {
+                    score = minimax(b, depth - 1 + extension, beta - 1, beta, !isMax, aiColor, newHash, ply + 1);
+                    if (score < beta && score > alpha && !searchAborted) score = minimax(b, depth - 1 + extension, alpha, beta, !isMax, aiColor, newHash, ply + 1);
+                }
+                b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                if (searchAborted) return 0;
+                idx++;
+                if (isMax) {
+                    if (score > bestScore) bestScore = score;
+                    if (score > alpha) alpha = score;
+                } else {
+                    if (score < bestScore) bestScore = score;
+                    if (score < beta) beta = score;
+                }
+                if (beta <= alpha) {
+                    if (!t) {
+                        const km = killerMoves[ply];
+                        if (km) { if (km.length < 2) km.push({...move}); else km[1] = {...move}; }
+                        historyTable[move.fromRow][move.fromCol][move.toRow][move.toCol] = Math.min((historyTable[move.fromRow][move.fromCol][move.toRow][move.toCol] || 0) + depth * depth, HISTORY_CAP);
+                    }
+                    break;
+                }
+            }
+            let flag = 'exact';
+            if (bestScore <= origAlpha) flag = 'upper';
+            else if (bestScore >= beta) flag = 'lower';
+            ttStore(hash, depth, bestScore, flag);
+            return bestScore;
+        }
+
+        function findMateInOne(b, color) {
+            for (const move of getAllLegalMoves(b, color)) {
+                const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                const opp = color === 'red' ? 'black' : 'red';
+                const isMate = isCheckmate(b, opp) || isDoubleCannonMateThreat(b, opp);
+                b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                if (isMate) return move;
+            }
+            return null;
+        }
+
+        // ============================================================
+        // 开局库
+        // ============================================================
+        const OPENING_BOOK = {
+            'r7174': [{ fromRow: 0, fromCol: 1, toRow: 2, toCol: 2 }, { fromRow: 0, fromCol: 7, toRow: 2, toCol: 6 }, { fromRow: 2, fromCol: 1, toRow: 2, toCol: 4 }],
+            'r6262': [{ fromRow: 2, fromCol: 1, toRow: 2, toCol: 4 }, { fromRow: 0, fromCol: 1, toRow: 2, toCol: 2 }, { fromRow: 3, fromCol: 2, toRow: 4, toCol: 2 }],
+            'r9274': [{ fromRow: 2, fromCol: 1, toRow: 2, toCol: 4 }, { fromRow: 0, fromCol: 1, toRow: 2, toCol: 2 }],
+            'r9172': [{ fromRow: 3, fromCol: 2, toRow: 4, toCol: 2 }, { fromRow: 2, fromCol: 1, toRow: 2, toCol: 4 }],
+        };
+
+        function getEvolvedOpeningMove(b, color) {
+            if (gameState.moveHistory.length > 6) return null;
+            const prefix = gameState.moveHistory.map(m => `${m.piece[0]}${m.fromRow}${m.fromCol}${m.toRow}${m.toCol}`).join('|');
+            if (!prefix) return null;
+            for (const key in learningData.openingBook) {
+                const entry = learningData.openingBook[key];
+                if (key.startsWith(prefix) && entry.wins > entry.losses) {
+                    const parts = key.split('|');
+                    const next = parts[gameState.moveHistory.length];
+                    if (next) {
+                        const fr = parseInt(next[1]), fc = parseInt(next[2]), tr = parseInt(next[3]), tc = parseInt(next[4]);
+                        if (isValidMove(b, fr, fc, tr, tc, color)) return { fromRow: fr, fromCol: fc, toRow: tr, toCol: tc };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function getOpeningMove(b, color) {
+            if (color !== 'black' || gameState.moveHistory.length === 0 || gameState.moveHistory.length > 8) return null;
+            const evolved = getEvolvedOpeningMove(b, color);
+            if (evolved) return evolved;
+            const last = gameState.moveHistory[gameState.moveHistory.length - 1];
+            if (!last || last.piece !== 'red') return null;
+            const key = `${last.piece[0]}${last.fromRow}${last.fromCol}${last.toRow}${last.toCol}`;
+            const responses = OPENING_BOOK[key];
+            if (!responses) return null;
+            const resp = responses[Math.floor(Math.random() * responses.length)];
+            if (isValidMove(b, resp.fromRow, resp.fromCol, resp.toRow, resp.toCol, 'black')) {
+                const p = b[resp.fromRow][resp.fromCol], t = b[resp.toRow][resp.toCol];
+                b[resp.toRow][resp.toCol] = p; b[resp.fromRow][resp.fromCol] = null;
+                const check = isKingInCheck(b, 'black');
+                b[resp.fromRow][resp.fromCol] = p; b[resp.toRow][resp.toCol] = t;
+                if (!check) return resp;
+            }
+            return null;
+        }
+
+        function getLearnedMove(b, color) {
+            const prob = getLearningProbability();
+            if (prob <= 0) return null;
+            if (Math.random() > prob) return null;
+            const hash = computeZobrist(b, color);
+            const learned = lookupLearnedMove(hash);
+            if (!learned) return null;
+            if (!isValidMove(b, learned.fromRow, learned.fromCol, learned.toRow, learned.toCol, color)) return null;
+            const p = b[learned.fromRow][learned.fromCol];
+            const t = b[learned.toRow][learned.toCol];
+            b[learned.toRow][learned.toCol] = p;
+            b[learned.fromRow][learned.fromCol] = null;
+            const inCheck = isKingInCheck(b, color);
+            b[learned.fromRow][learned.fromCol] = p;
+            b[learned.toRow][learned.toCol] = t;
+            if (inCheck) return null;
+            return learned;
+        }
+
+        function findBestMove(b, color, maxDepth, timeLimitMs) {
+            try {
+                const openingMove = getOpeningMove(b, color);
+                if (openingMove) return openingMove;
+
+                const learned = getLearnedMove(b, color);
+                if (learned) return learned;
+
+                const mateMove = findMateInOne(b, color);
+                if (mateMove) return mateMove;
+
+                if (isDoubleCannonMateThreat(b, color)) {
+                    for (const move of getAllLegalMoves(b, color)) {
+                        const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                        b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                        const still = isDoubleCannonMateThreat(b, color);
+                        b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                        if (!still) return move;
+                    }
+                }
+
+                let moves = getAllLegalMoves(b, color);
+                if (moves.length === 0) return null;
+                if (gameState.positionHistory.length >= 2) {
+                    const lastPos = gameState.positionHistory[gameState.positionHistory.length - 2];
+                    const filtered = moves.filter(move => {
+                        const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                        b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                        const h = computeZobrist(b, color === 'red' ? 'black' : 'red');
+                        b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                        return h !== lastPos;
+                    });
+                    if (filtered.length > 0) moves = filtered;
+                }
+                const values = getPieceValues();
+                const ordered = moves.slice().sort((a, b2) => {
+                    const pa = b[a.fromRow][a.fromCol], pb = b[b2.fromRow][b2.fromCol];
+                    if (pa && pa.toUpperCase() === 'C' && (!pb || pb.toUpperCase() !== 'C')) return -1;
+                    if (pb && pb.toUpperCase() === 'C' && (!pa || pa.toUpperCase() !== 'C')) return 1;
+                    const ta = b[a.toRow][a.toCol], tb = b[b2.toRow][b2.toCol];
+                    const va = ta ? (values[ta.toUpperCase()] || 0) : 0;
+                    const vb = tb ? (values[tb.toUpperCase()] || 0) : 0;
+                    return vb - va;
+                });
+                let bestMove = ordered[0] || null;
+                const start = performance.now();
+                searchDeadline = start + timeLimitMs;
+                searchAborted = false;
+                TT.clear();
+                clearHeuristics();
+                const baseHash = computeZobrist(b, color);
+                let prevScore = 0;
+                for (let depth = 1; depth <= maxDepth; depth++) {
+                    let bestThisDepth = null, bestScore = color === 'black' ? Infinity : -Infinity;
+                    let alpha = depth >= 4 ? prevScore - 50 : -Infinity;
+                    let beta = depth >= 4 ? prevScore + 50 : Infinity;
+                    let equalMoves = [], needReSearch = false;
+                    for (const move of ordered) {
+                        const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                        b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                        const newHash = baseHash ^ ZOBRIST[p][move.fromRow][move.fromCol] ^ ZOBRIST[p][move.toRow][move.toCol] ^ (t ? ZOBRIST[t][move.toRow][move.toCol] : 0);
+                        const score = minimax(b, depth - 1, alpha, beta, color === 'black', color, newHash, 1);
+                        b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                        if (searchAborted) break;
+                        if (depth >= 4 && (score <= alpha || score >= beta)) { needReSearch = true; break; }
+                        if (color === 'black') {
+                            if (score < bestScore) { bestScore = score; bestThisDepth = move; equalMoves = [move]; }
+                            else if (score === bestScore) equalMoves.push(move);
+                            beta = Math.min(beta, score);
+                        } else {
+                            if (score > bestScore) { bestScore = score; bestThisDepth = move; equalMoves = [move]; }
+                            else if (score === bestScore) equalMoves.push(move);
+                            alpha = Math.max(alpha, score);
+                        }
+                    }
+                    if (searchAborted) break;
+                    if (needReSearch) {
+                        bestThisDepth = null; bestScore = color === 'black' ? Infinity : -Infinity;
+                        alpha = -Infinity; beta = Infinity; equalMoves = [];
+                        for (const move of ordered) {
+                            const p = b[move.fromRow][move.fromCol], t = b[move.toRow][move.toCol];
+                            b[move.toRow][move.toCol] = p; b[move.fromRow][move.fromCol] = null;
+                            const newHash = baseHash ^ ZOBRIST[p][move.fromRow][move.fromCol] ^ ZOBRIST[p][move.toRow][move.toCol] ^ (t ? ZOBRIST[t][move.toRow][move.toCol] : 0);
+                            const score = minimax(b, depth - 1, alpha, beta, color === 'black', color, newHash, 1);
+                            b[move.fromRow][move.fromCol] = p; b[move.toRow][move.toCol] = t;
+                            if (searchAborted) break;
+                            if (color === 'black') {
+                                if (score < bestScore) { bestScore = score; bestThisDepth = move; equalMoves = [move]; }
+                                else if (score === bestScore) equalMoves.push(move);
+                                beta = Math.min(beta, score);
+                            } else {
+                                if (score > bestScore) { bestScore = score; bestThisDepth = move; equalMoves = [move]; }
+                                else if (score === bestScore) equalMoves.push(move);
+                                alpha = Math.max(alpha, score);
+                            }
+                        }
+                    }
+                    if (searchAborted) break;
+                    if (equalMoves.length > 1 && Math.random() < 0.5) bestThisDepth = equalMoves[Math.floor(Math.random() * equalMoves.length)];
+                    if (bestThisDepth) {
+                        bestMove = bestThisDepth;
+                        prevScore = bestScore;
+                        const idx = ordered.indexOf(bestThisDepth);
+                        if (idx > 0) { ordered.splice(idx, 1); ordered.unshift(bestThisDepth); }
+                    }
+                    if (performance.now() - start > timeLimitMs * 0.7) break;
+                    if (Math.abs(bestScore) > MATE_SCORE - 200) break;
+                }
+                return bestMove;
+            } catch (e) {
+                console.error('findBestMove error:', e);
+                return null;
+            }
+        }
+
+        // ============================================================
+        // 绘制
+        // ============================================================
+        let boardGridCanvas = null;
+        function prerenderGrid() {
+            boardGridCanvas = document.createElement('canvas');
+            boardGridCanvas.width = BOARD_WIDTH;
+            boardGridCanvas.height = BOARD_HEIGHT;
+            const g = boardGridCanvas.getContext('2d', { alpha: false });
+            g.fillStyle = '#f2e6d0'; g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+            g.lineWidth = 2; g.strokeStyle = '#5a3e1b';
+            for (let r = 0; r < 10; r++) {
+                const y = MARGIN_Y + r * CELL_SIZE;
+                g.beginPath(); g.moveTo(MARGIN_X, y); g.lineTo(MARGIN_X + 8 * CELL_SIZE, y); g.stroke();
+            }
+            for (let c = 0; c < 9; c++) {
+                const x = MARGIN_X + c * CELL_SIZE;
+                g.beginPath();
+                if (c === 0 || c === 8) { g.moveTo(x, MARGIN_Y); g.lineTo(x, MARGIN_Y + 9 * CELL_SIZE); }
+                else {
+                    g.moveTo(x, MARGIN_Y); g.lineTo(x, MARGIN_Y + 4 * CELL_SIZE);
+                    g.moveTo(x, MARGIN_Y + 5 * CELL_SIZE); g.lineTo(x, MARGIN_Y + 9 * CELL_SIZE);
+                }
+                g.stroke();
+            }
+            g.beginPath();
+            g.moveTo(MARGIN_X + 3 * CELL_SIZE, MARGIN_Y + 7 * CELL_SIZE);
+            g.lineTo(MARGIN_X + 5 * CELL_SIZE, MARGIN_Y + 9 * CELL_SIZE);
+            g.moveTo(MARGIN_X + 5 * CELL_SIZE, MARGIN_Y + 7 * CELL_SIZE);
+            g.lineTo(MARGIN_X + 3 * CELL_SIZE, MARGIN_Y + 9 * CELL_SIZE);
+            g.moveTo(MARGIN_X + 3 * CELL_SIZE, MARGIN_Y);
+            g.lineTo(MARGIN_X + 5 * CELL_SIZE, MARGIN_Y + 2 * CELL_SIZE);
+            g.moveTo(MARGIN_X + 5 * CELL_SIZE, MARGIN_Y);
+            g.lineTo(MARGIN_X + 3 * CELL_SIZE, MARGIN_Y + 2 * CELL_SIZE);
+            g.stroke();
+            g.font = 'bold 24px "KaiTi", "楷体", serif';
+            g.fillStyle = '#5a3e1b';
+            g.textAlign = 'center'; g.textBaseline = 'middle';
+            g.fillText('楚 河', MARGIN_X + 2 * CELL_SIZE, MARGIN_Y + 4.5 * CELL_SIZE);
+            g.fillText('汉 界', MARGIN_X + 6 * CELL_SIZE, MARGIN_Y + 4.5 * CELL_SIZE);
+        }
+
+        function drawBoard() {
+            if (!gameState.running) return;
+            if (!boardGridCanvas) prerenderGrid();
+            ctx.drawImage(boardGridCanvas, 0, 0);
+
+            if (gameState.lastMove) {
+                const { fromRow, fromCol, toRow, toCol } = gameState.lastMove;
+                ctx.beginPath();
+                ctx.arc(MARGIN_X + fromCol * CELL_SIZE, MARGIN_Y + fromRow * CELL_SIZE, PIECE_RADIUS + 4, 0, Math.PI * 2);
+                ctx.strokeStyle = '#8fbc8f'; ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.arc(MARGIN_X + toCol * CELL_SIZE, MARGIN_Y + toRow * CELL_SIZE, PIECE_RADIUS + 4, 0, Math.PI * 2);
+                ctx.strokeStyle = '#8fbc8f'; ctx.lineWidth = 3; ctx.stroke();
+            }
+
+            if (gameState.legalTargets.length > 0) {
+                for (const t of gameState.legalTargets) {
+                    ctx.beginPath();
+                    ctx.arc(MARGIN_X + t.col * CELL_SIZE, MARGIN_Y + t.row * CELL_SIZE, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(80, 160, 80, 0.45)'; ctx.fill();
+                }
+            }
+
+            const anim = gameState.animState;
+            const animActive = anim && (performance.now() - anim.startTime < anim.duration + 50);
+
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const piece = gameState.board[r][c];
+                    if (!piece) continue;
+                    if (animActive && r === anim.fromRow && c === anim.fromCol) continue;
+                    drawPiece(ctx, piece, r, c);
+                }
+            }
+
+            if (animActive) {
+                const t = Math.min(1, (performance.now() - anim.startTime) / anim.duration);
+                const easeT = 1 - Math.pow(1 - t, 3);
+                const x = MARGIN_X + (anim.fromCol + (anim.toCol - anim.fromCol) * easeT) * CELL_SIZE;
+                const y = MARGIN_Y + (anim.fromRow + (anim.toRow - anim.fromRow) * easeT) * CELL_SIZE;
+                drawPieceAt(ctx, anim.piece, x, y);
+            }
+
+            const redKing = findKing(gameState.board, 'red');
+            const blackKing = findKing(gameState.board, 'black');
+            const redThreat = isDoubleCannonMateThreat(gameState.board, 'red');
+            const blackThreat = isDoubleCannonMateThreat(gameState.board, 'black');
+
+            if (redThreat && redKing) highlightKing(redKing, '#ff3333');
+            if (blackThreat && blackKing) highlightKing(blackKing, '#ff3333');
+            if (!redThreat && !blackThreat) {
+                if (isKingInCheck(gameState.board, 'red') && redKing) highlightKing(redKing, '#ff9900');
+                if (isKingInCheck(gameState.board, 'black') && blackKing) highlightKing(blackKing, '#ff9900');
+            }
+
+            if (gameState.selectedPiece) {
+                const { row, col } = gameState.selectedPiece;
+                ctx.beginPath();
+                ctx.arc(MARGIN_X + col * CELL_SIZE, MARGIN_Y + row * CELL_SIZE, PIECE_RADIUS + 5, 0, Math.PI * 2);
+                ctx.strokeStyle = '#ffd966'; ctx.lineWidth = 4; ctx.stroke();
+            }
+        }
+
+        function highlightKing(pos, color) {
+            const x = MARGIN_X + pos.col * CELL_SIZE;
+            const y = MARGIN_Y + pos.row * CELL_SIZE;
+            const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 200);
+            ctx.beginPath();
+            ctx.arc(x, y, PIECE_RADIUS + 6 + pulse * 3, 0, Math.PI * 2);
+            ctx.strokeStyle = color; ctx.lineWidth = 3;
+            ctx.globalAlpha = 0.5 + pulse * 0.5; ctx.stroke(); ctx.globalAlpha = 1;
+        }
+
+        function drawPiece(g, piece, row, col) {
+            drawPieceAt(g, piece, MARGIN_X + col * CELL_SIZE, MARGIN_Y + row * CELL_SIZE);
+        }
+
+        function drawPieceAt(g, piece, x, y) {
+            const isRed = piece === piece.toUpperCase();
+            g.beginPath(); g.arc(x, y, PIECE_RADIUS, 0, Math.PI * 2);
+            g.fillStyle = isRed ? '#f5e6d3' : '#e0d5c0'; g.fill();
+            g.strokeStyle = '#5a3e1b'; g.lineWidth = 2.5; g.stroke();
+            g.beginPath(); g.arc(x, y, PIECE_RADIUS - 4, 0, Math.PI * 2);
+            g.strokeStyle = isRed ? '#b33e2c' : '#2a2a2a'; g.lineWidth = 2; g.stroke();
+            const charMap = { 'K': '帅', 'A': '仕', 'B': '相', 'N': '马', 'R': '车', 'C': '炮', 'P': '兵', 'k': '将', 'a': '士', 'b': '象', 'n': '马', 'r': '车', 'c': '炮', 'p': '卒' };
+            g.font = 'bold 30px "KaiTi", "楷体", "Microsoft YaHei", serif';
+            g.fillStyle = isRed ? '#b33e2c' : '#1e1e1e';
+            g.textAlign = 'center'; g.textBaseline = 'middle';
+            g.fillText(charMap[piece] || piece, x, y + 2);
+        }
+
+        function startAnimationLoop() {
+            if (animationRafId) return;
+            needAnimationLoop = true;
+            const loop = () => {
+                if (!needAnimationLoop) { animationRafId = null; return; }
+                drawBoard();
+                animationRafId = requestAnimationFrame(loop);
+            };
+            animationRafId = requestAnimationFrame(loop);
+        }
+
+        function stopAnimationLoop() { needAnimationLoop = false; }
+
+        // Bug1：animId 隔离，旧 setTimeout 不清掉新动画
+        function animateMove(fromRow, fromCol, toRow, toCol, piece, callback) {
+            const myId = ++animCounter;
+            gameState.animState = { piece, fromRow, fromCol, toRow, toCol, startTime: performance.now(), duration: 180, animId: myId };
+            startAnimationLoop();
+            setTimeout(() => {
+                try {
+                    // 仅当 animState 还是自己时才清空
+                    if (gameState.animState && gameState.animState.animId === myId) {
+                        gameState.animState = null;
+                    }
+                    drawBoard();
+                    if (callback) callback();
+                } catch (e) {
+                    console.error('animateMove error:', e);
+                    if (gameState.animState && gameState.animState.animId === myId) {
+                        gameState.animState = null;
+                    }
+                }
+            }, 210);
+        }
+
+        // ============================================================
+        // 界面更新
+        // ============================================================
+        function updateTurnDisplay() {
+            if (gameState.gameOver) {
+                if (gameState.winner === 'draw') {
+                    turnIndicator.textContent = '和棋' + (gameState.drawReason ? ` (${gameState.drawReason})` : '');
+                    turnIndicator.classList.add('draw');
+                    turnIndicator.classList.remove('check', 'thinking');
+                } else if (gameState.winner === 'red') {
+                    turnIndicator.textContent = '红方获胜！';
+                    turnIndicator.classList.remove('check', 'thinking', 'draw');
+                } else if (gameState.winner === 'black') {
+                    turnIndicator.textContent = '黑方获胜！';
+                    turnIndicator.classList.remove('check', 'thinking', 'draw');
+                }
+            } else if (gameState.aiBusy) {
+                let who = 'AI思考中...';
+                if (gameState.mode === 'autolearn') who = '🧠 自主学习对局中...';
+                else if (gameState.difficulty === 'hell') who = 'AI 地狱思考中...';
+                turnIndicator.textContent = who;
+                turnIndicator.classList.add('thinking');
+                turnIndicator.classList.remove('check', 'draw');
+            } else {
+                const inCheck = isKingInCheck(gameState.board, gameState.currentPlayer);
+                const doubleCannon = isDoubleCannonMateThreat(gameState.board, gameState.currentPlayer);
+                if (doubleCannon) {
+                    turnIndicator.textContent = (gameState.currentPlayer === 'red' ? '红方' : '黑方') + '危险！重炮！';
+                    turnIndicator.classList.add('check');
+                    turnIndicator.classList.remove('thinking', 'draw');
+                } else if (inCheck) {
+                    turnIndicator.textContent = (gameState.currentPlayer === 'red' ? '红方' : '黑方') + '被将军！';
+                    turnIndicator.classList.add('check');
+                    turnIndicator.classList.remove('thinking', 'draw');
+                } else {
+                    turnIndicator.textContent = gameState.currentPlayer === 'red' ? '红方走棋' : '黑方走棋';
+                    turnIndicator.classList.remove('check', 'thinking', 'draw');
+                }
+            }
+            updateUndoBtn();
+        }
+
+        function updateUndoBtn() {
+            if (!gameState.running) { undoBtn.disabled = true; return; }
+            if (gameState.mode === 'autolearn') { undoBtn.style.display = 'none'; return; }
+            undoBtn.style.display = '';
+            if (gameState.aiBusy || gameState.animState || gameState.gameOver) { undoBtn.disabled = true; return; }
+            undoBtn.disabled = gameState.mode === 'ai' ? gameState.moveHistory.length < 2 : gameState.moveHistory.length < 1;
+        }
+
+        // ============================================================
+        // 统一 AI 调度器
+        // ============================================================
+        function scheduleAIMove(delay) {
+            if (!gameState.running || gameState.gameOver || gameState.aiBusy) return;
+            if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+            aiTimer = setTimeout(() => {
+                aiTimer = null;
+                if (!gameState.running || gameState.gameOver || gameState.aiBusy) return;
+                executeAIMove();
+            }, delay || 50);
+        }
+
+        function executeAIMove() {
+            if (!gameState.running || gameState.gameOver || gameState.aiBusy) return;
+
+            if (gameState.animState) {
+                scheduleAIMove(50);
+                return;
+            }
+
+            gameState.aiBusy = true;
+            updateTurnDisplay();
+
+            setTimeout(() => {
+                try {
+                    let move = null;
+                    const color = gameState.currentPlayer;
+                    const mode = gameState.mode;
+                    const diff = gameState.difficulty;
+
+                    if (mode === 'autolearn') {
+                        const timeLimit = 1500;
+                        const maxDepth = 10;
+                        move = findBestMove(gameState.board, color, maxDepth, timeLimit);
+                        if (!move) {
+                            const legal = getAllLegalMoves(gameState.board, color);
+                            if (legal.length > 0) move = legal[Math.floor(Math.random() * legal.length)];
+                        }
+                        if (!gameState.gameOver) {
+                            gameState.autolearnMoveCount++;
+                            const elapsed = ((performance.now() - gameState.autolearnStartTime) / 1000).toFixed(1);
+                            autolearnInfo.textContent = `🧠 自主学习 | 第 ${gameState.autolearnMoveCount} 步 | 已用 ${elapsed}s | 权重 v${learningData.weightVersion}`;
+                            autolearnInfo.classList.add('show');
+                        }
+                    } else if (mode === 'ai') {
+                        if (diff === 'easy') {
+                            const moves = getAllLegalMoves(gameState.board, 'black');
+                            if (moves.length > 0) {
+                                if (Math.random() < 0.3) move = moves[Math.floor(Math.random() * moves.length)];
+                                else {
+                                    const captures = moves.filter(m => gameState.board[m.toRow][m.toCol] != null);
+                                    if (captures.length > 0 && Math.random() < 0.6) move = captures[Math.floor(Math.random() * captures.length)];
+                                    else move = moves[Math.floor(Math.random() * moves.length)];
+                                }
+                            }
+                        } else if (diff === 'medium') {
+                            if (Math.random() < 0.1) {
+                                const moves = getAllLegalMoves(gameState.board, 'black');
+                                if (moves.length > 0) move = moves[Math.floor(Math.random() * moves.length)];
+                            } else {
+                                move = findBestMove(gameState.board, 'black', 5, 700);
+                            }
+                            if (!move) { const m = getAllLegalMoves(gameState.board, 'black'); if (m.length > 0) move = m[0]; }
+                        } else if (diff === 'hard') {
+                            move = findBestMove(gameState.board, 'black', 7, 2000);
+                            if (!move) { const m = getAllLegalMoves(gameState.board, 'black'); if (m.length > 0) move = m[0]; }
+                        } else if (diff === 'master') {
+                            move = findBestMove(gameState.board, 'black', 9, 3500);
+                            if (!move) { const m = getAllLegalMoves(gameState.board, 'black'); if (m.length > 0) move = m[0]; }
+                        } else {
+                            if (canOpponentFormDoubleCannonInOne(gameState.board, 'black')) {
+                                for (const m of getAllLegalMoves(gameState.board, 'black')) {
+                                    const p = gameState.board[m.fromRow][m.fromCol];
+                                    if (!p || p.toUpperCase() !== 'C') continue;
+                                    const t = gameState.board[m.toRow][m.toCol];
+                                    gameState.board[m.toRow][m.toCol] = p; gameState.board[m.fromRow][m.fromCol] = null;
+                                    const stillThreatened = isDoubleCannonMateThreat(gameState.board, 'black');
+                                    gameState.board[m.fromRow][m.fromCol] = p; gameState.board[m.toRow][m.toCol] = t;
+                                    if (!stillThreatened) { move = m; break; }
+                                }
+                            }
+                            if (!move) move = findBestMove(gameState.board, 'black', 16, 12000);
+                            if (!move) { const m = getAllLegalMoves(gameState.board, 'black'); if (m.length > 0) move = m[0]; }
+                        }
+                    }
+
+                    if (move) {
+                        makeMove(move.fromRow, move.fromCol, move.toRow, move.toCol);
+                    } else {
+                        const isCheckmated = isCheckmate(gameState.board, color);
+                        if (isCheckmated) {
+                            endGame(color === 'red' ? 'black' : 'red', '将死');
+                        } else {
+                            endGame(color === 'red' ? 'black' : 'red', '困毙');
+                        }
+                    }
+                } catch (e) {
+                    console.error('executeAIMove error:', e);
+                } finally {
+                    gameState.aiBusy = false;
+                    updateTurnDisplay();
+                    if (!gameState.animState) drawBoard();
+
+                    if (!gameState.gameOver && gameState.running) {
+                        const needAI = (gameState.mode === 'autolearn') ||
+                                       (gameState.mode === 'ai' && gameState.currentPlayer === 'black');
+                        if (needAI && !aiTimer) {
+                            setTimeout(() => scheduleAIMove(50), 0);
+                        }
+                    }
+                }
+            }, 30);
+        }
+
+        // ============================================================
+        // 统一结束游戏
+        // ============================================================
+        function endGame(result, reason) {
+            if (gameState.gameOver) return;
+            gameState.gameOver = true;
+            gameState.winner = result;
+            gameState.drawReason = result === 'draw' ? reason : null;
+            if (result === 'draw') playSound('draw'); else playSound('win');
+            updateTurnDisplay();
+            drawBoard();
+
+            let msg;
+            if (result === 'draw') msg = `和棋！${reason || ''}`;
+            else if (result === 'red') msg = '红方获胜！';
+            else msg = '黑方获胜！';
+            toast(msg, 2000);
+
+            if (result === 'draw') {
+                recordGameResult('draw', reason);
+            } else {
+                recordGameResult(result);
+                const lastMoves = gameState.moveHistory.slice(-6);
+                for (const m of lastMoves) recordMoveOutcome(m.preHash, m, m.piece === result);
+                saveLearningData();
+                updateLearningDisplay();
+            }
+            autolearnInfo.classList.remove('show');
+            if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+        }
+
+        // ============================================================
+        // 走棋（epoch 隔离：防止旧 finishMove 误作用于新棋局）
+        // ============================================================
+        function makeMove(fromRow, fromCol, toRow, toCol) {
+            if (gameState.gameOver) return false;
+            const movingPiece = gameState.board[fromRow][fromCol];
+            if (!movingPiece) return false;
+            if (getPieceColor(movingPiece) !== gameState.currentPlayer) return false;
+            if (!isValidMove(gameState.board, fromRow, fromCol, toRow, toCol, gameState.currentPlayer)) return false;
+
+            const forceSkipAnimation = gameState.mode === 'autolearn';
+            if (forceSkipAnimation) gameState.animState = null;
+
+            // Bug1：记录当前棋局代数
+            const myEpoch = gameState.epoch;
+
+            const preMoveHash = computeZobrist(gameState.board, gameState.currentPlayer);
+            const targetPiece = gameState.board[toRow][toCol];
+            gameState.board[toRow][toCol] = movingPiece;
+            gameState.board[fromRow][fromCol] = null;
+
+            if (isKingInCheck(gameState.board, gameState.currentPlayer)) {
+                gameState.board[fromRow][fromCol] = movingPiece;
+                gameState.board[toRow][toCol] = targetPiece;
+                toast('不能送将！');
+                drawBoard();
+                return false;
+            }
+
+            if (targetPiece) playSound('capture'); else playSound('move');
+            const pieceColor = getPieceColor(movingPiece);
+            const pieceType = movingPiece.toUpperCase();
+            gameState.moveHistory.push({
+                fromRow, fromCol, toRow, toCol,
+                piece: pieceColor, pieceType, captured: targetPiece, preHash: preMoveHash
+            });
+            const newPosHash = computeZobrist(gameState.board, gameState.currentPlayer === 'red' ? 'black' : 'red');
+            gameState.positionHistory.push(newPosHash);
+            gameState.selectedPiece = null;
+            gameState.legalTargets = [];
+            gameState.lastMove = { fromRow, fromCol, toRow, toCol };
+
+            if (targetPiece) gameState.noCaptureCount = 0;
+            else gameState.noCaptureCount++;
+            if (!gameState.positionCounts[newPosHash]) gameState.positionCounts[newPosHash] = 0;
+            gameState.positionCounts[newPosHash]++;
+
+            const previousPlayer = gameState.currentPlayer;
+            const opponentColor = previousPlayer === 'red' ? 'black' : 'red';
+            const oppKing = findKing(gameState.board, opponentColor);
+
+            if (!oppKing) {
+                // 兜底：对方将帅已被吃（正常流程不应到达）
+                gameState.currentPlayer = opponentColor;
+                endGame(previousPlayer, '将死');
+                return true;
+            }
+
+            gameState.currentPlayer = opponentColor;
+
+            // 结束判定统一在动画后执行，避免同步阻塞主线程
+            const finishMove = () => {
+                if (gameState.gameOver) return;
+                // Bug1：棋局已重置，退出
+                if (gameState.epoch !== myEpoch) return;
+
+                // 1. 将死
+                if (isCheckmate(gameState.board, gameState.currentPlayer)) {
+                    endGame(previousPlayer, '将死');
+                    return;
+                }
+
+                // 2. 双炮杀（含 canEscape 检测）
+                if (isDoubleCannonMateThreat(gameState.board, gameState.currentPlayer)) {
+                    const moves = getAllLegalMoves(gameState.board, gameState.currentPlayer);
+                    let canEscape = false;
+                    for (const move of moves) {
+                        const p = gameState.board[move.fromRow][move.fromCol];
+                        const t = gameState.board[move.toRow][move.toCol];
+                        gameState.board[move.toRow][move.toCol] = p;
+                        gameState.board[move.fromRow][move.fromCol] = null;
+                        if (!isDoubleCannonMateThreat(gameState.board, gameState.currentPlayer)) canEscape = true;
+                        gameState.board[move.fromRow][move.fromCol] = p;
+                        gameState.board[move.toRow][move.toCol] = t;
+                        if (canEscape) break;
+                    }
+                    if (!canEscape) {
+                        endGame(previousPlayer, '双炮杀');
+                        return;
+                    }
+                }
+
+                // 3. 困毙（未被将军但无合法走法）
+                if (!isKingInCheck(gameState.board, gameState.currentPlayer)) {
+                    const legalMoves = getAllLegalMoves(gameState.board, gameState.currentPlayer);
+                    if (legalMoves.length === 0) {
+                        endGame(previousPlayer, '困毙');
+                        return;
+                    }
+                }
+
+                // 4. 和棋
+                const drawResult = isDraw(gameState.board, gameState.currentPlayer);
+                if (drawResult.isDraw) {
+                    endGame('draw', drawResult.reason);
+                    return;
+                }
+
+                // 5. 正常流程
+                if (isKingInCheck(gameState.board, gameState.currentPlayer)) playSound('check');
+                updateTurnDisplay();
+                drawBoard();
+
+                if (gameState.mode === 'ai' && gameState.currentPlayer === 'black') {
+                    setTimeout(() => scheduleAIMove(50), 0);
+                } else if (gameState.mode === 'autolearn') {
+                    setTimeout(() => scheduleAIMove(50), 0);
+                }
+            };
+
+            if (!forceSkipAnimation) {
+                animateMove(fromRow, fromCol, toRow, toCol, movingPiece, finishMove);
+            } else {
+                finishMove();
+            }
+            return true;
+        }
+
+        // ============================================================
+        // 初始化 / 控制（epoch++ 使旧的异步回调失效）
+        // ============================================================
+        function initGame(mode, difficulty) {
+            clearAllTimers();
+            gameState.epoch++;  // Bug1：新棋局，旧 finishMove 失效
+            gameState.mode = mode;
+            gameState.difficulty = difficulty;
+            gameState.board = createInitialBoard();
+            gameState.currentPlayer = 'red';
+            gameState.selectedPiece = null;
+            gameState.legalTargets = [];
+            gameState.gameOver = false;
+            gameState.winner = null;
+            gameState.drawReason = null;
+            gameState.lastMove = null;
+            gameState.moveHistory = [];
+            gameState.positionHistory = [];
+            gameState.positionCounts = {};
+            gameState.noCaptureCount = 0;
+            gameState.running = true;
+            gameState.aiBusy = false;
+            gameState.animState = null;
+            gameState.autolearnMoveCount = 0;
+            gameState.autolearnStartTime = performance.now();
+            TT.clear();
+            clearHeuristics();
+            autolearnInfo.classList.remove('show');
+
+            const initHash = computeZobrist(gameState.board, 'red');
+            gameState.positionHistory.push(initHash);
+            gameState.positionCounts[initHash] = 1;
+
+            modeBadge.textContent = mode === 'ai' ? '单人模式' : (mode === 'human' ? '双人对战' : '自主学习');
+            modeBadge.style.background = mode === 'ai' ? '#5a7d5a' : (mode === 'human' ? '#5a5a7d' : '#3a5a7d');
+            learningBadge.style.display = mode === 'autolearn' ? 'inline-block' : 'none';
+            turnIndicator.classList.toggle('autolearn-mode', mode === 'autolearn');
+            hellBadge.style.display = difficulty === 'hell' ? 'inline-block' : 'none';
+            turnIndicator.classList.toggle('hell-mode', difficulty === 'hell');
+
+            updateLearningDisplay();
+            updateTurnDisplay();
+            drawBoard();
+
+            if (mode === 'autolearn') {
+                autolearnInfo.textContent = `🧠 自主学习 | 权重 v${learningData.weightVersion} | 准备开始...`;
+                autolearnInfo.classList.add('show');
+                scheduleAIMove(200);
+            }
+        }
+
+        backBtn.addEventListener('click', () => {
+            if (gameState.aiBusy) return;
+            clearAllTimers();
+            gameContainer.classList.remove('active');
+            startScreen.classList.remove('hidden');
+            gameState.running = false;
+            gameState.gameOver = true;
+            gameState.animState = null;
+            gameState.epoch++;  // Bug1：使正在执行的 finishMove 失效
+            autolearnInfo.classList.remove('show');
+            updateLearningDisplay();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (!gameState.running) return;
+            if (gameState.aiBusy) return;
+            // Bug1：epoch 机制保证旧 finishMove 失效，无需额外 animState 拦截
+            initGame(gameState.mode, gameState.difficulty);
+        });
+
+        undoBtn.addEventListener('click', () => {
+            if (!gameState.running || gameState.aiBusy || gameState.animState) return;
+            if (gameState.mode === 'ai') {
+                if (gameState.moveHistory.length < 2) return;
+                undoMove(); undoMove();
+            } else {
+                if (gameState.moveHistory.length < 1) return;
+                undoMove();
+            }
+            gameState.gameOver = false;
+            gameState.winner = null;
+            gameState.drawReason = null;
+            gameState.selectedPiece = null;
+            gameState.legalTargets = [];
+
+            gameState.positionCounts = {};
+            for (const h of gameState.positionHistory) {
+                if (!gameState.positionCounts[h]) gameState.positionCounts[h] = 0;
+                gameState.positionCounts[h]++;
+            }
+
+            gameState.noCaptureCount = 0;
+            for (let i = gameState.moveHistory.length - 1; i >= 0; i--) {
+                if (gameState.moveHistory[i].captured) break;
+                gameState.noCaptureCount++;
+            }
+
+            updateTurnDisplay();
+            drawBoard();
+        });
+
+        function undoMove() {
+            const last = gameState.moveHistory.pop();
+            if (!last) return;
+            const movedPiece = gameState.board[last.toRow][last.toCol];
+            gameState.board[last.fromRow][last.fromCol] = movedPiece;
+            gameState.board[last.toRow][last.toCol] = last.captured || null;
+            gameState.currentPlayer = last.piece;
+            gameState.positionHistory.pop();
+            if (gameState.positionHistory.length === 0) {
+                const initHash = computeZobrist(gameState.board, 'red');
+                gameState.positionHistory.push(initHash);
+            }
+            if (gameState.moveHistory.length > 0) {
+                const prev = gameState.moveHistory[gameState.moveHistory.length - 1];
+                gameState.lastMove = { fromRow: prev.fromRow, fromCol: prev.fromCol, toRow: prev.toRow, toCol: prev.toCol };
+            } else {
+                gameState.lastMove = null;
+            }
+        }
+
+        // ============================================================
+        // 画布交互
+        // ============================================================
+        function handlePointerDown(e) {
+            if (!gameState.running || gameState.mode === 'autolearn') return;
+            if (gameState.gameOver || gameState.aiBusy || gameState.animState) return;
+            if (gameState.mode === 'ai' && gameState.currentPlayer === 'black') return;
+            e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            const col = Math.round((mouseX - MARGIN_X) / CELL_SIZE);
+            const row = Math.round((mouseY - MARGIN_Y) / CELL_SIZE);
+            if (row < 0 || row > 9 || col < 0 || col > 8) return;
+
+            if (gameState.selectedPiece) {
+                const { row: fr, col: fc } = gameState.selectedPiece;
+                if (fr === row && fc === col) {
+                    gameState.selectedPiece = null;
+                    gameState.legalTargets = [];
+                    drawBoard();
+                    return;
+                }
+                const success = makeMove(fr, fc, row, col);
+                if (success) return;
+                const piece = gameState.board[row][col];
+                if (piece && getPieceColor(piece) === gameState.currentPlayer) selectPiece(row, col);
+                else { gameState.selectedPiece = null; gameState.legalTargets = []; }
+                drawBoard();
+            } else {
+                const piece = gameState.board[row][col];
+                if (piece && getPieceColor(piece) === gameState.currentPlayer) {
+                    selectPiece(row, col);
+                    drawBoard();
+                }
+            }
+        }
+
+        function selectPiece(row, col) {
+            gameState.selectedPiece = { row, col };
+            gameState.legalTargets = [];
+            for (let tr = 0; tr < 10; tr++) {
+                for (let tc = 0; tc < 9; tc++) {
+                    if (!isValidMove(gameState.board, row, col, tr, tc, gameState.currentPlayer)) continue;
+                    const p = gameState.board[row][col], t = gameState.board[tr][tc];
+                    gameState.board[tr][tc] = p; gameState.board[row][col] = null;
+                    const check = isKingInCheck(gameState.board, gameState.currentPlayer);
+                    gameState.board[row][col] = p; gameState.board[tr][tc] = t;
+                    if (!check) gameState.legalTargets.push({ row: tr, col: tc });
+                }
+            }
+        }
+
+        // ============================================================
+        // 开始界面
+        // ============================================================
+        let selectedMode = 'ai';
+        let selectedDifficulty = 'medium';
+
+        loadLearningData();
+        updateLearningDisplay();
+
+        document.getElementById('exportLearningBtn').addEventListener('click', () => {
+            try {
+                let jsonStr;
+                try {
+                    jsonStr = JSON.stringify(learningData, null, 2);
+                } catch (err) {
+                    alert('导出失败: 学习数据无法序列化\n' + err.message);
+                    return;
+                }
+                if (!jsonStr || jsonStr.length === 0) {
+                    alert('导出失败: 学习数据为空');
+                    return;
+                }
+                const filename = `chess_learning_${Date.now()}.json`;
+                let downloadStarted = false;
+
+                try {
+                    if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && URL.createObjectURL) {
+                        const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        }, 1000);
+                        downloadStarted = true;
+                    }
+                } catch (e) { console.warn('方案1 (Blob) 失败:', e); }
+
+                if (!downloadStarted) {
+                    try {
+                        const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+                        const a = document.createElement('a');
+                        a.href = dataUrl;
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => document.body.removeChild(a), 1000);
+                        downloadStarted = true;
+                    } catch (e) { console.warn('方案2 (dataURL) 失败:', e); }
+                }
+
+                if (!downloadStarted) {
+                    const w = window.open('', '_blank');
+                    if (w) {
+                        w.document.write('<pre style="white-space:pre-wrap;word-break:break-all;">' +
+                            jsonStr.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>');
+                        w.document.title = filename;
+                    } else {
+                        alert('导出失败: 浏览器不支持下载且弹窗被拦截\n请手动复制以下 JSON:\n\n' + jsonStr.slice(0, 500) + '...');
+                    }
+                }
+
+                if (downloadStarted) {
+                    setTimeout(() => alert('学习数据已导出: ' + filename), 200);
+                }
+            } catch (err) {
+                console.error('导出异常:', err);
+                alert('导出失败: ' + err.message);
+            }
+        });
+
+        document.getElementById('importLearningBtn').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (data && typeof data === 'object') {
+                            learningData = Object.assign(learningData, data);
+                            saveLearningData();
+                            updateLearningDisplay();
+                            alert('学习数据已导入');
+                        }
+                    } catch (err) { alert('导入失败: 文件格式错误'); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        document.getElementById('clearLearningBtn').addEventListener('click', () => {
+            if (confirm('确定清除所有学习数据吗？')) {
+                learningData = {
+                    moveBook: {}, weightVersion: 1,
+                    weights: { cannonValue: 380, kingSafety: 1.0, synergy: 1.0, threat: 1.0, mobility: 1.0, pieceSafety: 1.0, centerControl: 1.0 },
+                    gamesPlayed: 0, wins: 0, losses: 0, draws: 0, openingBook: {}
+                };
+                saveLearningData();
+                updateLearningDisplay();
+            }
+        });
+
+        document.querySelectorAll('.mode-option').forEach(el => {
+            el.addEventListener('click', () => {
+                document.querySelectorAll('.mode-option').forEach(o => o.classList.remove('active'));
+                el.classList.add('active');
+                selectedMode = el.dataset.mode;
+                const hideDiff = selectedMode === 'human' || selectedMode === 'autolearn';
+                document.getElementById('difficultyLabel').style.display = hideDiff ? 'none' : 'block';
+                document.getElementById('difficultyOptions').style.display = hideDiff ? 'none' : 'flex';
+            });
+        });
+
+        document.querySelectorAll('.diff-option').forEach(el => {
+            el.addEventListener('click', () => {
+                document.querySelectorAll('.diff-option').forEach(o => o.classList.remove('active'));
+                el.classList.add('active');
+                selectedDifficulty = el.dataset.diff;
+            });
+        });
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            initAudio();
+            startScreen.classList.add('hidden');
+            gameContainer.classList.add('active');
+            setTimeout(() => {
+                initGame(selectedMode, selectedMode === 'autolearn' ? 'hell' : selectedDifficulty);
+            }, 400);
+        });
+
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        window.addEventListener('resize', () => {
+            if (gameState.running) drawBoard();
+        });
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                if (gameState.running) drawBoard();
+            }, 200);
+        });
+    })();
+</script>
+</body>
+</html>
